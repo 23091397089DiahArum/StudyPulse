@@ -1,0 +1,1 @@
+enum TimerMode { pomodoro, rule_5217, ultradian_rhythm }
