@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/teknik_page.dart';
+import 'pages/home_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const TeknikPage()),
+        MaterialPageRoute(builder: (_) => const HomePage()),
       );
     });
   }
@@ -23,6 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFB3E5FC), // Biru terang (light blue)
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -32,13 +33,18 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 100,
               height: 100,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             const Text(
               "StudyPulse",
-              style: TextStyle(fontSize: 24),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white, // Biar kontras dengan background
+              ),
             ),
           ],
         ),
       ),
     );
-  }}
+  }
+}

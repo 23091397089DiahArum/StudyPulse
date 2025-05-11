@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/timer_mode.dart';
+import '../models/materi.dart';
+import '../widgets/materi_list.dart';
 
 class PomodoroTimerPage extends StatefulWidget {
   final TimerMode selectedMode;
@@ -17,7 +21,7 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage> {
   bool isRunning = false;
   Timer? timer;
 
-  List<Map<String, dynamic>> materiList = []; // dengan centang
+  List<Materi> materiList = [];
 
   int get workTime {
     switch (widget.selectedMode) {
@@ -45,6 +49,7 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage> {
   void initState() {
     super.initState();
     remainingSeconds = workTime;
+    loadMateriList();
   }
 
   void startTimer() {
@@ -89,28 +94,46 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  Future<void> saveMateriList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = materiList.map((e) => json.encode(e.toJson())).toList();
+    await prefs.setStringList('materiList', jsonList);
+  }
+
+  Future<void> loadMateriList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = prefs.getStringList('materiList') ?? [];
+    setState(() {
+      materiList = jsonList.map((e) => Materi.fromJson(json.decode(e))).toList();
+    });
+  }
+
   void addMateri(String text) {
     setState(() {
-      materiList.add({'text': text, 'done': false});
+      materiList.add(Materi(text: text));
     });
+    saveMateriList();
   }
 
   void editMateri(int index, String newText) {
     setState(() {
-      materiList[index]['text'] = newText;
+      materiList[index].text = newText;
     });
+    saveMateriList();
   }
 
   void toggleCentang(int index) {
     setState(() {
-      materiList[index]['done'] = !materiList[index]['done'];
+      materiList[index].isChecked = !materiList[index].isChecked;
     });
+    saveMateriList();
   }
 
   void deleteMateri(int index) {
     setState(() {
       materiList.removeAt(index);
     });
+    saveMateriList();
   }
 
   @override
@@ -148,53 +171,12 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage> {
             const Divider(height: 40),
             const Text("Daftar Materi", style: TextStyle(fontSize: 18)),
             const SizedBox(height: 10),
-            ...materiList.asMap().entries.map((entry) {
-              int i = entry.key;
-              var materi = entry.value;
-              return ListTile(
-                leading: Checkbox(
-                  value: materi['done'],
-                  onChanged: (_) => toggleCentang(i),
-                ),
-                title: Text(
-                  materi['text'],
-                  style: TextStyle(
-                    decoration: materi['done'] ? TextDecoration.lineThrough : null,
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        final controller = TextEditingController(text: materi['text']);
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Edit Materi"),
-                            content: TextField(controller: controller),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  editMateri(i, controller.text);
-                                  Navigator.pop(context);
-                                },
-                                child: const Text("Simpan"),
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => deleteMateri(i),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+            MateriList(
+              materiList: materiList,
+              onDelete: deleteMateri,
+              onEdit: editMateri,
+              onToggleCheck: (i, checked) => toggleCentang(i),
+            ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
